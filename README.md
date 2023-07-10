@@ -15,8 +15,12 @@ Any circuit and CAD designs should also be put on the repo.
 		- Download forecasts
 		- Adapt watering schedule to the weather forecast
 	- Upload data to Firebase
-		- Develope database structure
-		- Check accurate readings
+		- Check accurate readings uploaded
+  		- Make sure that the format is correct for minimal storage
+
+- Firebase
+	- Develop database structure
+ 	- Check uploads and downloads are working
 
 - Flutter
 	- Manual control of the system
