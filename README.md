@@ -17,7 +17,6 @@ Any circuit and CAD designs should also be put on the repo.
 	- Upload data to Firebase
 		- Check accurate readings uploaded
   		- Make sure that the format is correct for minimal storage
-
 - Firebase
 	- Develop database structure
  	- Check uploads and downloads are working
