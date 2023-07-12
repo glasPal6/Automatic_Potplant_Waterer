@@ -1,6 +1,6 @@
 # ESP_Garden_Automation
 
-This is just a fun little project for me to get back into the ESP32/8266 world, while also allowing me to play around with and learn Firebase, Flutter, and Git/Github. Any suggestions or additions just create a pull request and edit what is necessary.
+This is just a fun little project for me to get back into the ESP32/8266 world, while also allowing me to play around with and learn Firebase, Flutter, Docker, and Git/Github. Any suggestions or additions just create a pull request and edit what is necessary.
 
 Any circuit and CAD designs should also be put on the repo.
 
@@ -27,6 +27,9 @@ Any circuit and CAD designs should also be put on the repo.
 	- Plot graphs on the app
 		- Show predictive results on graphs
 		- Plot estimated mean
+ 
+- Docker
+	- Create a Docker container for the project (if applicable...)
 
 - Git
 	- Create a git action for a pull request
