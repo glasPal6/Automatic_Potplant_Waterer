@@ -23,7 +23,6 @@ struct sensor_data {
     float water_level;
 };
 const byte sensor_data_size = 5;
-byte hour = 0;
 
 FirebaseData firebaseData;
 FirebaseAuth firebaseAuth;
@@ -43,6 +42,8 @@ void NTP_Init();
 void Firebase_Init();
 void checkFirebaseConnection();
 
+void sendSensorData(tm timeinfo, sensor_data data);
+
 tm getDateAndTime();
 sensor_data getSensorData();
 bool writeToFirebase(String path, sensor_data data);
@@ -57,38 +58,18 @@ void setup() {
     Wifi_Init();
     NTP_Init();
     Firebase_Init();
-    
-    // Set the first hout
-    tm timeinfo = getDateAndTime();
-    hour = timeinfo.tm_hour;
 
-    delay(1000);
-}
-
-void loop() {
-    checkFirebaseConnection();
-    
+    // Read and send the data
     tm timeinfo = getDateAndTime();
     sensor_data data = getSensorData();
-    
-    bool write_Success = false;
-    while (!write_Success) {
-        write_Success = writeToFirebase(
-            "Sensor_Data/" + String(timeinfo.tm_mon + 1) + 
-                "/" + String(timeinfo.tm_mday) + 
-                // "/" + String(timeinfo.tm_hour),
-                "/" + hour,
-            data
-        );
-    }
-    
-    hour++;
-    delay(500);
-    // while(hour != timeinfo.tm_hour + 1){
-    //     timeinfo = getDateAndTime();
-    //     delay(1000 * 60 * 60 * 10);
-    // }
+    sendSensorData(timeinfo, data);
+
+    // Sleep for the hour
+        // Note: comnect GPIO16 (D0) to RST to wake up
+    ESP.deepSleep((3600 - timeinfo.tm_sec - (timeinfo.tm_min * 60)) * 1e6);
 }
+
+void loop() {}
 
 //------------------------------
 // Function definitions
@@ -160,6 +141,21 @@ void checkFirebaseConnection() {
         #ifdef showDetails
             Serial.println(".");
         #endif
+    }
+}
+
+void sendSensorData(tm timeinfo, sensor_data data) {
+    checkFirebaseConnection();
+
+    // Write the data to Firebase
+    bool write_Success = false;
+    while (!write_Success) {
+        write_Success = writeToFirebase(
+            "Sensor_Data/" + String(timeinfo.tm_mon + 1) + 
+                "/" + String(timeinfo.tm_mday) + 
+                "/" + String(timeinfo.tm_hour),
+            data
+        );
     }
 }
 
