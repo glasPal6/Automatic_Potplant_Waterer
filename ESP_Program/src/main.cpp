@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 //------------------------------
+// Libraries
+//------------------------------
+
 #if defined(ESP8266)
     #include <ESP8266WiFi.h>
 #elif defined(ESP32)
@@ -14,7 +17,12 @@
 
 #include <time.h>
 #include <internet_details.h>
+
 //------------------------------
+// Global variables
+//------------------------------
+
+// Structure to store the sensor data
 struct sensor_data {
     float temperature;
     float humidity;
@@ -24,32 +32,40 @@ struct sensor_data {
 };
 const byte sensor_data_size = 5;
 
+// Firebase variables
 FirebaseData firebaseData;
 FirebaseAuth firebaseAuth;
 FirebaseConfig firebaseConfig;
 
-
+// NTP variables
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 2 * 3600;
 const int   daylightOffset_sec = 0;
 
 //------------------------------
 //Function declarations
+//------------------------------
 
 //Initialize functions
 void Wifi_Init();
 void NTP_Init();
 void Firebase_Init();
+
+// Firebase functions
 void checkFirebaseConnection();
-
-void sendSensorData(tm timeinfo, sensor_data data);
-
-tm getDateAndTime();
-sensor_data getSensorData();
 bool writeToFirebase(String path, sensor_data data);
+
+// Sensor functions
+void sendSensorData(tm timeinfo);
+sensor_data getSensorData();
+
+// Time functions
+tm getDateAndTime();
 
 //------------------------------
 // Main functions
+//------------------------------
+
 void setup() {
     // Initialize the serial
     Serial.begin(115200);
@@ -59,31 +75,32 @@ void setup() {
     NTP_Init();
     Firebase_Init();
 
-    // Read and send the data
+    // Send data to Firebase
     tm timeinfo = getDateAndTime();
-    sensor_data data = getSensorData();
-    sendSensorData(timeinfo, data);
+    sendSensorData(timeinfo);
 
     // Sleep for the hour
         // Note: comnect GPIO16 (D0) to RST to wake up
-    ESP.deepSleep((3600 - timeinfo.tm_sec - (timeinfo.tm_min * 60)) * 1e6);
+    // ESP.deepSleep((3600 - timeinfo.tm_sec - (timeinfo.tm_min * 60)) * 1e6);
 }
 
+// Not needed due to deep sleep
 void loop() {}
 
 //------------------------------
 // Function definitions
+//------------------------------
+
+// Initialize functions
 void Wifi_Init() {
     // Connect to WiFi
     WiFi.disconnect(true);
     WiFi.persistent(false);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Serial.print("Connecting to WiFi");
 
-    // Check connection
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         #ifdef showDetails
-        Serial.print(".");
+            Serial.print(".");
         #endif
         delay(500);
     }
@@ -117,14 +134,21 @@ void Firebase_Init() {
 
     // Firebase wifi purposes
     Firebase.reconnectWiFi(true);
-    // firebaseData.setResponseSize(4096);
+    firebaseData.setResponseSize(4096);
     
     // Firebase token generation and max amount of retries
     firebaseConfig.token_status_callback = tokenStatusCallback;
-    // firebaseConfig.max_token_generation_retry = 5;
+    firebaseConfig.max_token_generation_retry = 5;
 
     // Initialize Firebase
     Firebase.begin(&firebaseConfig, &firebaseAuth);
+    while (!Firebase.ready()) {
+        #ifdef showDetails
+            Serial.print(".");
+        #endif
+        delay(500);
+        Firebase.begin(&firebaseConfig, &firebaseAuth);
+    }
 
     // Print the details
     #ifdef showDetails
@@ -134,6 +158,7 @@ void Firebase_Init() {
     #endif
 }
 
+// Firebase functions
 void checkFirebaseConnection() {
     // Check if the token has expired
     while(Firebase.isTokenExpired()) {
@@ -144,44 +169,12 @@ void checkFirebaseConnection() {
     }
 }
 
-void sendSensorData(tm timeinfo, sensor_data data) {
-    checkFirebaseConnection();
-
-    // Write the data to Firebase
-    bool write_Success = false;
-    while (!write_Success) {
-        write_Success = writeToFirebase(
-            "Sensor_Data/" + String(timeinfo.tm_mon + 1) + 
-                "/" + String(timeinfo.tm_mday) + 
-                "/" + String(timeinfo.tm_hour),
-            data
-        );
-    }
-}
-
-tm getDateAndTime(){
-    tm timeinfo;
-    while(!getLocalTime(&timeinfo));
-    return timeinfo;
-}
-
-sensor_data getSensorData(){
-    sensor_data data;
-    
-    // Temp values at the moment
-    data.temperature = 0;
-    data.humidity = 0;
-    data.soil_moisture = 0;
-    data.light_intensity = 0;
-    data.water_level = 0;
-
-    return data;
-}
-
 bool writeToFirebase(String path, sensor_data data){
+    // For each of the sensor readings
     for (byte i = 0; i < sensor_data_size; i++) {
         bool writeSuccess = false;
         
+        // Send data to correct entry
         switch (i){
             case 0:
                 writeSuccess = Firebase.RTDB.setFloat(&firebaseData, path + "/temperature", data.temperature);
@@ -203,6 +196,7 @@ bool writeToFirebase(String path, sensor_data data){
                 return 0;
         }
 
+        // Check if the write was successful
         if (!writeSuccess) {
             #ifdef showDetails
                 Serial.printf("Write (%hhx) failed\n", i);
@@ -214,5 +208,51 @@ bool writeToFirebase(String path, sensor_data data){
 
     return 1;
 }
+
+// Sensor functions
+sensor_data getSensorData(){
+    // TODO: Get the sensor data
+    sensor_data data;
+    
+    // Temp values at the moment
+    data.temperature = 0;
+    data.humidity = 0;
+    data.soil_moisture = 0;
+    data.light_intensity = 0;
+    data.water_level = 0;
+
+    return data;
+}
+
+void sendSensorData(tm timeinfo) {
+    // Check if the token has expired
+    checkFirebaseConnection();
+
+    // Get the sensor data
+    sensor_data data = getSensorData();
+
+    // Write the data to Firebase
+    bool write_Success = false;
+    while (!write_Success) {
+        write_Success = writeToFirebase(
+            "Sensor_Data/" + String(timeinfo.tm_mon + 1) + 
+                "/" + String(timeinfo.tm_mday) + 
+                "/" + String(timeinfo.tm_hour),
+            data
+        );
+    }
+}
+
+// Time functions
+tm getDateAndTime(){
+    // Get the time
+    tm timeinfo;
+    while(!getLocalTime(&timeinfo));
+    return timeinfo;
+}
+
+
+
+
 
 
