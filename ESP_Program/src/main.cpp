@@ -82,6 +82,7 @@ void setup() {
     // Sleep for the hour
         // Note: comnect GPIO16 (D0) to RST to wake up
     // ESP.deepSleep((3600 - timeinfo.tm_sec - (timeinfo.tm_min * 60)) * 1e6);
+    ESP.deepSleep(5e6);
 }
 
 // Not needed due to deep sleep
