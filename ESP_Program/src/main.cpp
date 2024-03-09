@@ -216,11 +216,11 @@ sensor_data getSensorData(){
     sensor_data data;
     
     // Temp values at the moment
-    data.temperature = 0;
-    data.humidity = 0;
-    data.soil_moisture = 0;
-    data.light_intensity = 0;
-    data.water_level = 0;
+    data.temperature = random(0, 100);
+    data.humidity = random(0, 100);
+    data.soil_moisture = random(0, 100);
+    data.light_intensity = random(0, 100);
+    data.water_level = random(0, 100);
 
     return data;
 }
