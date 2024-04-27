@@ -14,5 +14,6 @@ Usefull commands
 - build 
     - pio run
     - pio run --target upload
+    - pio run --target upload -t compiledb
 - monitor serial
     - pio device monitor

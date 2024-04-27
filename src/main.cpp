@@ -1,6 +1,6 @@
 #include "HardwareSerial.h"
-#define showDetails true
-
+#include "c_types.h"
+#include "core_esp8266_features.h"
 #include <Arduino.h>
 //------------------------------
 // Libraries
@@ -13,14 +13,21 @@
 #endif
 #include "local_wifi.h"
 #include <time.h>
+#include <Servo.h>
 
 //------------------------------
 // Global variables
 //------------------------------
+#define showDetails true
 
-const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 2 * 3600;
-const int   daylightOffset_sec = 0;
+static const char* ntpServer = "pool.ntp.org";
+static const long  gmtOffset_sec = 2 * 3600;
+static const int   daylightOffset_sec = 0;
+
+static const int servo_pin = 5;
+static const uint16_t servo_min = 500;
+static const uint16_t servo_max = 5000;
+Servo servo_tap;
 
 //------------------------------
 //Function 
@@ -80,6 +87,7 @@ void setup()
     Serial.begin(115200);
     
     // Initialize the components
+    servo_tap.attach(servo_pin, servo_min, servo_max, 0);
     Wifi_Init();
     NTP_Init();
 
@@ -98,13 +106,17 @@ void setup()
 
     // Sleep for the hour
         // Note: comnect GPIO16 (D0) to RST to wake up
-    ESP.deepSleep(5e6);
+     ESP.deepSleep(5e6);
 }
 
 // Not needed due to deep sleep
 void loop()
 {
-
+    delay(1000);
+    servo_tap.writeMicroseconds(2600);
+    delay(1000);
+    Serial.println(servo_tap.read());
+    servo_tap.writeMicroseconds(0);
 }
 
 
