@@ -85,25 +85,26 @@ void setup()
 
     tm time_info;
     getDateAndTime(&time_info);
+    #ifdef  showDetails
+        Serial.println( "\n" + 
+                        String(time_info.tm_year + 1900) + "/" +
+                        String(time_info.tm_mon + 1) + "/" +
+                        String(time_info.tm_mday) + " - " +
+                        String(time_info.tm_hour) + ":" +
+                        String(time_info.tm_min) + ":" +
+                        String(time_info.tm_sec)
+                       );
+    #endif // showDetails
 
     // Sleep for the hour
         // Note: comnect GPIO16 (D0) to RST to wake up
-    // ESP.deepSleep((3600 - time_info.tm_sec - (time_info.tm_min * 60)) * 1e6);
-    // ESP.deepSleep(5e6);
+    ESP.deepSleep(5e6);
 }
 
 // Not needed due to deep sleep
 void loop()
 {
-    tm time_info;
-    getDateAndTime(&time_info);
-    Serial.println("Sensor_Data/" + String(time_info.tm_mon + 1) + 
-                "/" + String(time_info.tm_mday) + 
-                "/" + String(time_info.tm_hour) +
-                "/" + String(time_info.tm_min) + 
-                "/" + String(time_info.tm_sec) 
-            );
-    delay(1000);
+
 }
 
 
