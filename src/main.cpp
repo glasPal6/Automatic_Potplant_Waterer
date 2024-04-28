@@ -1,6 +1,3 @@
-#include "HardwareSerial.h"
-#include "c_types.h"
-#include "core_esp8266_features.h"
 #include <Arduino.h>
 //------------------------------
 // Libraries
@@ -18,16 +15,23 @@
 //------------------------------
 // Global variables
 //------------------------------
-#define showDetails true
+#define SHOW_DETAILS true
+
+#define SLEEP_TIME 5e6
+// #define SLEEP_TIME 1e6 * 3600
+#define WATER_TIME_MS 5e3
+
+#define SERVO_OPEN 2400
+#define SERVO_CLOSE 0
+#define SERVO_WAIT_TIME_MS 2.5e3
+#define SERVO_PIN 5
+#define SERVO_MIN 500
+#define SERVO_MAX 2600
+Servo servo_tap;
 
 static const char* ntpServer = "pool.ntp.org";
 static const long  gmtOffset_sec = 2 * 3600;
 static const int   daylightOffset_sec = 0;
-
-static const int servo_pin = 5;
-static const uint16_t servo_min = 500;
-static const uint16_t servo_max = 5000;
-Servo servo_tap;
 
 //------------------------------
 //Function 
@@ -41,14 +45,14 @@ void Wifi_Init()
 
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
-        #ifdef showDetails
+        #ifdef SHOW_DETAILS
             Serial.print(".");
         #endif
         delay(500);
     }
 
     // Show details
-    #ifdef showDetails
+    #ifdef SHOW_DETAILS
         Serial.println("\nWiFi details: ");
         Serial.print("\tIP Address: \t");
         Serial.println(WiFi.localIP());
@@ -70,11 +74,32 @@ void NTP_Init()
 void getDateAndTime(tm *time_info)
 {
     while (!getLocalTime(time_info)) { 
-        #ifdef showDetails
+        #ifdef SHOW_DETAILS
             Serial.print(".");
         #endif
         delay(500);
     }
+}
+
+void tapOperations()
+{
+    #ifdef SHOW_DETAILS
+        Serial.println("Setting up servo");
+    #endif
+    servo_tap.attach(SERVO_PIN, SERVO_MIN, SERVO_MAX, SERVO_CLOSE);
+    delay(SERVO_WAIT_TIME_MS); 
+
+    #ifdef SHOW_DETAILS
+        Serial.println("Opening Tap");
+    #endif
+    servo_tap.writeMicroseconds(SERVO_OPEN);
+    delay(WATER_TIME_MS); 
+    
+    #ifdef SHOW_DETAILS
+        Serial.println("Closing Tap");
+    #endif
+    servo_tap.writeMicroseconds(SERVO_CLOSE);
+    delay(SERVO_WAIT_TIME_MS); 
 }
 
 //------------------------------
@@ -87,36 +112,35 @@ void setup()
     Serial.begin(115200);
     
     // Initialize the components
-    servo_tap.attach(servo_pin, servo_min, servo_max, 0);
-    Wifi_Init();
-    NTP_Init();
+    // Wifi_Init();
+    // NTP_Init();
 
-    tm time_info;
-    getDateAndTime(&time_info);
-    #ifdef  showDetails
-        Serial.println( "\n" + 
-                        String(time_info.tm_year + 1900) + "/" +
-                        String(time_info.tm_mon + 1) + "/" +
-                        String(time_info.tm_mday) + " - " +
-                        String(time_info.tm_hour) + ":" +
-                        String(time_info.tm_min) + ":" +
-                        String(time_info.tm_sec)
-                       );
-    #endif // showDetails
-
-    // Sleep for the hour
+    // tm time_info;
+    // getDateAndTime(&time_info);
+    // #ifdef SHOW_DETAILS
+    //     Serial.println( "\n" + 
+    //                     String(time_info.tm_year + 1900) + "/" +
+    //                     String(time_info.tm_mon + 1) + "/" +
+    //                     String(time_info.tm_mday) + " - " +
+    //                     String(time_info.tm_hour) + ":" +
+    //                     String(time_info.tm_min) + ":" +
+    //                     String(time_info.tm_sec)
+    //                    );
+    // #endif // SHOW_DETAILS
+    
+    tapOperations();
+    
+    // Sleep 
         // Note: comnect GPIO16 (D0) to RST to wake up
-     ESP.deepSleep(5e6);
+    #ifdef SHOW_DETAILS
+        Serial.println("Sleeping.........zzz");
+    #endif
+    ESP.deepSleep(SLEEP_TIME);
 }
 
 // Not needed due to deep sleep
 void loop()
 {
-    delay(1000);
-    servo_tap.writeMicroseconds(2600);
-    delay(1000);
-    Serial.println(servo_tap.read());
-    servo_tap.writeMicroseconds(0);
 }
 
 
